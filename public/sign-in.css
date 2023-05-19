@@ -1,0 +1,87 @@
+/* Sign-in div */
+.sign-in {
+    display: flex;
+    height: 95vh;
+    background-image: url('./fundoAgua.png');
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: cover;
+    margin: 0;
+    color: var(--cor1);
+    text-align: left;
+    padding: 20px 20px;
+}
+
+.sign-in-form {
+    margin-top: 8%;
+    margin-left: 4%;
+    padding: 30px 40px;
+    width: 40%;
+    height: min-content;
+    background-color: white;
+    border: solid var(--cor1) 1px;
+    border-radius: 7px;
+}
+
+.sign-in-form input {
+    background-color: var(--cor1);
+    border: none;
+    border-radius: 7px;
+    color: var(--cor5);
+}
+
+.sign-in-form h3 {
+    text-decoration: underline var(--cor4) 2px;
+    width: 100%;
+    text-align: center;
+    color: var(--cor4);
+    font-style: bold;
+    font-size: 2rem;
+}
+
+.sign-in-form label {
+    color: var(--cor5);
+}
+
+.sign-in-form button {
+    width: 80%;
+    margin-left: 10%;
+    margin-top: 2%;
+    margin-bottom: 2%;
+    padding: 2px 30px;
+    color: white;
+    font-size: 20px;
+    border: none;
+    border-radius: 7px;
+    font-style: bold;
+    background-color: var(--cor4);
+}
+
+.sign-in-form button:hover {
+    color: var(--cor4);
+    font-size: 20px;
+    border: none;
+    border-radius: 7px;
+    font-style: bold;
+    background-color: var(--cor1);
+}
+
+.sign-in-form button:focus,
+.sign-in-form button:active {
+    background-color: white;
+    color: black;
+}
+
+.alert-secondary {
+    width: 100%;
+    color: var(--cor5);
+    padding: 5px 20px; 
+    margin: 2% 0;
+}
+
+.alert-secondary i{
+    margin-right: 2%;
+    max-height: 24px;
+    max-width: 24px;
+    color: rgba(223, 41, 41, 0.832);
+}

@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/css/bootstrap.min.css"
+        integrity="sha384-zCbKRCUGaJDkqS1kPbPd7TveP5iyJE0EjAuZQTgFLD2ylzuqKfdKlfG/eSrtxUkn" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.18/dist/sweetalert2.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.18/dist/sweetalert2.all.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/dashboard.css">
+    <title> IoT solution </title>
+</head>
+
+<body>
+
+    <nav class="navbarDashboard">
+
+        <div class="mb-3">
+            <div class="navbarDashboardImage"></div>
+            <h5>{{user_nome}}</h5>
+            <p> Condominio: <br /> {{user_condominio}}</p>
+            <p> Número casas: {{user_casas}}</p>
+        </div>
+
+        <ul class="navbar-nav">
+            <li class="nav-item">
+                <a class="nav-link" href="/auth/dashboard"> &nbsp;&nbsp;&nbsp; Dashboard</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/auth/alertas"> &nbsp;&nbsp;&nbsp; Alertas <span class="notification-count"
+                        data-count="{{alertas_nao_lidos}}"> {{alertas_nao_lidos}} </span> </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/auth/configuracoes"> &nbsp;&nbsp;&nbsp; Configurações</a>
+            </li>
+
+            <button class="buttonSignOut" onclick="sign_out()">Logout</button>
+        </ul>
+
+    </nav>
+
+    <main>
+        <div class="conteudo">
+            <div class="dadosCondominio">
+                <h2 class="conteudo_titulo"> Os seus dados: </h2>
+                <form>
+                    <div class="form-group">
+                        <label for="nome"> Nome: </label>
+                        <input type="text" class="form-control" id="nome" value="{{user_nome}}">
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email:</label>
+                        <input type="email" class="form-control" id="email" value="{{user_email}}">
+                    </div>
+                    <div class="form-group">
+                        <label for="morada">Morada:</label>
+                        <input type="text" class="form-control" id="morada" value="{{user_condominio}}">
+                    </div>
+                </form>
+                <button class="btnAtualizarDados" onclick="atualizarDadosPerfil()"> Atualizar Dados</button>
+                <button class="btnPassword" onclick="mudarPassword()">Mudar Password</button>
+            </div>
+
+            <div class="dadosCasas">
+                <h2 class="conteudo_titulo"> Casas a administrar: </h2>
+
+                <table class="table">
+                    <thead class="cabecalho_tabela">
+                        <tr>
+                            <th>Nº Porta </th>
+                            <th>Proprietário</th>
+                            <th>Limites</th>
+                            <th> </th>
+                        </tr>
+                    </thead>
+
+                    <tbody class="corpo_tabela">
+                        {{#each casas}}
+                        <tr>
+                            <td>{{endereco}}</td>
+                            <td>{{proprietario}}</td>
+                            <td>{{limites}}</td>
+                            <td>
+                                <div class="imagem-tabela-editar" id="{{alerta_id}}"
+                                    onclick="editarCasa(this.id, '{{endereco}}', '{{proprietario}}', '{{limites}}' )">
+                                </div>
+                            </td>
+                        </tr>
+                        {{/each}}
+                    </tbody>
+                </table>
+
+            </div>
+
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2023 Monitorização e Controlo de Água - Solução IoT</p>
+    </footer>
+
+
+    <script>
+        // Sign-out function
+        function sign_out() {
+            localStorage.clear();
+            window.location = "/";
+        }
+
+        function atualizarDadosPerfil() {
+            console.log("Atualizar dados de perfil");
+            Swal.fire({
+                title: '',
+                html: 'A atualizar os dados',
+                timer: 4000,
+                timerProgressBar: true,
+                showConfirmButton: false,
+            });
+            fetch('/auth/atualizarPerfil', {
+                method: "POST",
+                body: JSON.stringify({
+                    nome: document.getElementById('nome').value,
+                    email: document.getElementById('email').value,
+                    morada: document.getElementById('morada').value,
+                }),
+                headers: {
+                    "Content-type": "application/json; charset=UTF-8"
+                }
+            }).then(response => response.json())
+                .then(async data => {
+                    if (data.update_perfil) {
+                        location.reload(true);
+                    } else {
+                        Swal.fire({
+                            title: 'Aviso',
+                            text: data.msg,
+                            icon: 'error',
+                            confirmButtonText: 'Ok',
+                            confirmButtonColor: '#3DC5EB',
+                        })
+                    }
+                })
+                .catch(error => {
+                    // Manipule o erro aqui
+                    Swal.fire({
+                        title: 'Aviso',
+                        text: 'Houve um problema. Tente de novo mais tarde.',
+                        icon: 'error',
+                        confirmButtonText: 'Ok',
+                        confirmButtonColor: '#3DC5EB',
+                    })
+                    console.error(error);
+                });
+        }
+
+        function mudarPassword() {
+            Swal.fire({
+                title: 'Mudar palavra-passe',
+                html: `
+                <style>
+                    form {
+                        margin-top: 8%;
+                        margin-left: 4%;
+                        padding: 30px 40px;
+                        width: 40%;
+                        height: min-content;
+                        background-color: white;
+                        border: solid var(--cor1) 1px;
+                        border-radius: 7px;
+                    }
+                    label {
+                        display: block;
+                        margin: 10px 0;
+                        font-weight: bold;
+                        color: #3DC5EB; 
+                    }
+                    input[type="password"] {
+                        width: 100%;
+                        padding: 10px;
+                        border-radius: 5px;
+                        border: 1px solid #ccc;
+                    }
+                </style>
+
+                <div class="dados">
+                    <label for="currentPassword">Senha Atual:</label>
+                    <input type="password" id="currentPassword">
+                    <label for="newPassword">Nova Senha:</label>
+                    <input type="password" id="newPassword">
+                    <label for="confirmPassword">Confirmar Nova Senha:</label>
+                    <input type="password" id="confirmPassword">
+
+                </div>
+                `,
+                confirmButtonText: 'Alterar',
+                confirmButtonColor: '#3DC5EB',
+                showCloseButton: true,
+                preConfirm: () => {
+
+                    if (document.getElementById('currentPassword').value.length < 10) {
+                        Swal.showValidationMessage('Password inválida!')
+                    }
+                    else if (document.getElementById('newPassword').value.length < 10) {
+                        Swal.showValidationMessage('Formato de email inválido!')
+                    }
+                    else if (document.getElementById('confirmPassword').value.length < 10) {
+                        Swal.showValidationMessage('Formato de email inválido!')
+                    }
+                    else if (document.getElementById('newPassword').value !== document.getElementById('confirmPassword').value) {
+                        Swal.showValidationMessage('A nova palavra-passe e a palavra-passe de confirmação não coincidem!')
+                    }
+                    else {
+                        return { atualizar: true }
+                    }
+
+                }
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+
+                    Swal.fire({
+                        title: '',
+                        html: 'A analisar dados',
+                        timer: 4000,
+                        timerProgressBar: true,
+                        showConfirmButton: false,
+                    });
+
+                    fetch('/auth/password', {
+                        method: "POST",
+                        body: JSON.stringify({
+                            pass: document.getElementById('currentPassword').value,
+                            pass1: document.getElementById('newPassword').value,
+                        }),
+                        headers: {
+                            "Content-type": "application/json; charset=UTF-8"
+                        }
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            console.log(data)
+                            if (data.update_pass) {
+                                Swal.fire({
+                                    title: 'Aviso',
+                                    text: 'Palavra-passe alterada com sucesso',
+                                    icon: 'success',
+                                    confirmButtonText: 'Ok',
+                                    confirmButtonColor: '#3DC5EB',
+                                })
+                            } else {
+                                Swal.fire({
+                                    title: 'Aviso',
+                                    text: data.msg,
+                                    icon: 'error',
+                                    confirmButtonText: 'Ok',
+                                    confirmButtonColor: '#3DC5EB',
+                                })
+                            }
+                        })
+                        .catch(error => {
+                            // Manipule o erro aqui
+                            console.error(error);
+                        });
+                }
+            });
+        }
+
+        function editarCasa(id, endereco, proprietario, limites) {
+            Swal.fire({
+                title: 'Editar ' + endereco,
+                html: `
+                <style>
+                    form {
+                        margin-top: 8%;
+                        margin-left: 4%;
+                        padding: 30px 40px;
+                        width: 40%;
+                        height: min-content;
+                        background-color: white;
+                        border: solid var(--cor1) 1px;
+                        border-radius: 7px;
+                    }
+                    
+                    label {
+                        display: block;
+                        margin: 10px 0;
+                        font-weight: bold;
+                        color: #3DC5EB; 
+                    }
+
+                    input{
+                        width: 100%;
+                        padding: 10px;
+                        border-radius: 5px;
+                        border: 1px solid #ccc;
+                    }
+                </style>
+
+                <div class="dados">
+                    <label for="currentPassword"> Propietario:</label>
+                    <input type="text" id="proprietario" value="`+ proprietario + `">
+                    <label for="newPassword">Limites:</label>
+                    <input type="number" id="limites"  value="`+ limites + `">
+
+                </div>
+                `,
+                confirmButtonText: 'Alterar',
+                confirmButtonColor: '#3DC5EB',
+                showCloseButton: true,
+                preConfirm: () => {
+                    if (document.getElementById('limites').value < 0) {
+                        Swal.showValidationMessage('Valor inválido para limite'); 
+                    }
+                    else {
+                        return { atualizar: true }
+                    }
+                }
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+
+                    Swal.fire({
+                        title: 'Atualizar dados da casa'+ endereco,
+                        timer: 4000,
+                        timerProgressBar: true,
+                        showConfirmButton: false,
+                    });
+
+                    fetch('/auth/atualizarCasa', {
+                        method: "POST",
+                        body: JSON.stringify({
+                            casa: id,
+                            proprietario: document.getElementById('proprietario').value,
+                            limites: document.getElementById('limites').value,
+                        }),
+                        headers: {
+                            "Content-type": "application/json; charset=UTF-8"
+                        }
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            console.log(data)
+                            if (data.update_casa) {
+                                location.reload(true);
+                            } else {
+                                Swal.fire({
+                                    title: 'Aviso',
+                                    text: data.msg,
+                                    icon: 'error',
+                                    confirmButtonText: 'Ok',
+                                    confirmButtonColor: '#3DC5EB',
+                                })
+                            }
+                        })
+                        .catch(error => {
+                            // Manipule o erro aqui
+                            console.error(error);
+                            Swal.fire({
+                                title: 'Aviso',
+                                text: 'Houve um problema. Tente de novo mais tarde.',
+                                icon: 'error',
+                                confirmButtonText: 'Ok',
+                                confirmButtonColor: '#3DC5EB',
+                            })
+                        });
+                }
+            });
+        }
+
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.slim.min.js"
+        integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-fQybjgWLrvvRgtW6bFlB7jaZrFsaBXjsOMm/tB9LTS58ONXgqbR9W8oWht/amnpF"
+        crossorigin="anonymous"></script>
+
+</body>
+
+</html>

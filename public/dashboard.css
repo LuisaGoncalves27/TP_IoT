@@ -1,0 +1,293 @@
+/* Navbar vertical*/
+.navbarDashboard {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: 200px;
+    background-color: var(--cor5);
+    color: var(--cor1);
+    padding: 0;
+}
+
+/* Imagem na navbar*/
+.navbarDashboardImage {
+    background-color: var(--cor1);
+    background-image: url('./image_dashboard.png');
+    background-repeat: no-repeat;
+    background-size: cover;
+    margin-top: 20px;
+    margin-left: 25%;
+    margin-bottom: 20px;
+    width: 100px;
+    height: 100px;
+    border: none;
+    border-radius: 100px;
+}
+
+/* texto da navbar _ user_name*/
+.navbarDashboard h5 {
+    margin-bottom: 15px;
+    font-size: 20px;
+    font-weight: bolder;
+    text-align: center;
+    color: var(--cor4);
+}
+
+/* texto da navbar*/
+.navbarDashboard p {
+    max-width: 200px;
+    font-size: 14px;
+    margin-bottom: 7px;
+    padding-left: 20px;
+    color: var(--cor2);
+}
+
+/*Lista da navbar*/
+.navbar-nav {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    border-top: 1px solid var(--cor3);
+
+}
+
+.nav-item {
+    list-style: none;
+    margin: 0;
+    padding: 1px 5px;
+}
+
+.navbarDashboard a {
+    display: block;
+    color: #fff;
+    text-decoration: none;
+    padding-left: 45px;
+    margin-bottom: 5px;
+    border-radius: 7px;
+    transition: background-color 0.3s ease;
+}
+
+.navbarDashboard ul li a:hover,
+.navbarDashboard ul li.active a {
+    background-color: var(--cor6);
+    width: 100%;
+}
+
+/* Dar um pouco de espacameno antes de comecar o li*/
+.navbar-nav li:first-child {
+    margin-top: 30px;
+}
+
+/* Botao de Sign-Out*/
+.navbar-nav li:last-child {
+    position: absolute;
+    bottom: 20px;
+}
+
+.buttonSignOut {
+    position: absolute;
+    bottom: 5vh;
+    left: 10%;
+    width: 80%;
+    padding: 2px 20px;
+    text-align: center;
+    color: white;
+    font-size: 20px;
+    border: none;
+    border-radius: 7px;
+    font-style: bold;
+    background-color: var(--cor4);
+}
+
+
+.buttonSignOut:hover {
+    font-size: 20px;
+    border: none;
+    border-radius: 7px;
+    font-style: bold;
+    background-color: var(--cor3);
+}
+
+.buttonSignOut:focus,
+.buttonSignOut:active {
+    background-color: var(--cor2);
+    color: black;
+}
+
+.notification-count {
+    display: none;
+    /* começa escondido */
+}
+
+.notification-count[data-count='0'] {
+    display: none;
+}
+
+.notification-count[data-count]:not([data-count='0']) {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    line-height: 20px;
+    margin-left: 1px;
+    margin-right: 1px;
+    position: relative;
+    top: -6px;
+
+    border-radius: 50%;
+    background-color: #FF4136;
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+    text-align: center;
+    color: white;
+    font-weight: bold;
+    font-size: 11px;
+}
+
+/*Conteudo*/
+.conteudo {
+    margin-left: 250px;
+    margin-top: 10px;
+}
+
+/* Titulos dos conteudos do dashboard */
+.conteudo_titulo {
+    color: var(--cor4);
+    padding: 10px 10px;
+}
+
+/* Tabela dos alertas*/
+.table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.cabecalho_tabela tr th {
+    border: none;
+    border-bottom: 1px solid var(--cor3);
+    color: var(--cor4);
+}
+
+.corpo_tabela th,
+td {
+    text-align: left;
+    padding: 4px 20px;
+    margin-left: 4px;
+    border-bottom: 1px solid var(--cor3);
+}
+
+.corpo_tabelea tr.visto {
+    background-color: white;
+    /* cor de fundo para linhas lidas */
+}
+
+.corpo_tabela tr.nao_visto {
+    background-color: var(--cor2);
+}
+
+
+.imagem-tabela-alerta {
+    background-color: transparent;
+    background-position: center center;
+    background-repeat: no-repeat;
+    width: 24px;
+    height: 24px;
+    padding: 4px 10px;
+}
+
+.imagem-tabela-alerta.true {
+    background-image: url('./envelope_aberto.png');
+    background-size: contain;
+}
+
+.imagem-tabela-alerta:not(.true) {
+    background-image: url('./envelope_fechado.png');
+    background-size: contain;
+}
+
+/*Imagens para ler/apagar alerta*/
+.ler_apagar {
+    display: flex;
+    align-items: center;
+}
+
+.imagem-tabela-ler {
+    background-color: transparent;
+    background-position: center center;
+    background-repeat: no-repeat;
+    background-image: url('./ver_alerta.png');
+    background-size: contain;
+    width: 24px;
+    height: 24px;
+    padding: 4px 10px;
+    margin: 0 10px;
+}
+
+.imagem-tabela-apagar {
+    background-color: transparent;
+    background-position: center center;
+    background-repeat: no-repeat;
+    background-image: url('./apagar_alerta.png');
+    background-size: contain;
+    width: 24px;
+    height: 24px;
+    padding: 4px 10px;
+    margin: 0 10px;
+}
+
+/*Pagina de configuracoes*/
+.dadosCondominio {
+    width: 58vh;
+    height: 95vh;
+    float: left;
+    margin-right: 15px;
+    padding-top: 15px;
+}
+
+.dadosCasas {
+    margin-left: 5px;
+    border: none;
+    height: 93vh;
+    width: 68vh;
+    border-left: solid 2px var(--cor3);
+    float: left;
+    padding: 15px 20px;
+}
+
+.btnAtualizarDados {
+    width: 100%;
+    margin-top: 8%;
+    margin-bottom: 2%;
+    padding: 3px 30px;
+    color: white;
+    font-size: 17px;
+    border: none;
+    border-radius: 7px;
+    font-style: bold;
+    background-color: var(--cor4);
+}
+
+.btnPassword {
+    width: 100%;
+    margin-top: 3%;
+    margin-bottom: 2%;
+    padding: 3px 30px;
+    color: white;
+    font-size: 17px;
+    border: none;
+    border-radius: 7px;
+    font-style: bold;
+    background-color: var(--cor6);
+}
+
+.imagem-tabela-editar{
+    background-color: transparent;
+    background-position: center center;
+    background-repeat: no-repeat;
+    background-image: url('./editar_dados.png');
+    background-size: contain;
+    width: 24px;
+    height: 24px;
+    padding: 4px 10px;
+    margin: 0 10px;
+}
+

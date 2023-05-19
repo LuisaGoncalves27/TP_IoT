@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/css/bootstrap.min.css"
+        integrity="sha384-zCbKRCUGaJDkqS1kPbPd7TveP5iyJE0EjAuZQTgFLD2ylzuqKfdKlfG/eSrtxUkn" crossorigin="anonymous">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.18/dist/sweetalert2.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.18/dist/sweetalert2.all.min.js"></script>
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/dashboard.css">
+    <title> IoT solution </title>
+</head>
+
+<body>
+
+    <nav class="navbarDashboard">
+
+        <div class="mb-3">
+            <div class="navbarDashboardImage"></div>
+            <h5>{{user_nome}}</h5>
+            <p> Condominio: <br /> {{user_condominio}}</p>
+            <p> Número casas: {{user_casas}}</p>
+        </div>
+
+        <ul class="navbar-nav">
+            <li class="nav-item">
+                <a class="nav-link" href="/auth/dashboard"> &nbsp;&nbsp;&nbsp; Dashboard</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/auth/alertas"> &nbsp;&nbsp;&nbsp; Alertas <span class="notification-count"
+                        data-count="{{alertas_nao_lidos}}"> {{alertas_nao_lidos}} </span> </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/auth/configuracoes"> &nbsp;&nbsp;&nbsp; Configurações</a>
+            </li>
+            
+
+            <button class="buttonSignOut" onclick="sign_out()">Logout</button>
+        </ul>
+
+    </nav>
+
+
+    <main>
+        <div class="conteudo">
+            <h2 class="conteudo_titulo"> Mensagens recebidas: </h2>
+
+            <table class="table">
+                <thead class="cabecalho_tabela">
+                    <tr>
+                        <th> </th>
+                        <th>Data</th>
+                        <th> </th>
+                        <th> </th>
+                    </tr>
+                </thead>
+
+                <tbody class="corpo_tabela">
+                    {{#each alertas}}
+                    <tr class={{visto}}>
+                        <td class="imagem-tabela-alerta {{visto}}"></td>
+                        <td class="align-middle">{{data}}</td>
+                        <td class="align-middle">{{tipo}}</td>
+                        <td class="ler_apagar">
+                            <div class="imagem-tabela-ler" id="{{alerta_id}}"
+                                onclick="lerAlerta(this.id, '{{mensagem}}', '{{tipo}}', '{{data}}' )">
+                            </div>
+                            <div class="imagem-tabela-apagar" id="{{alerta_id}}" onclick="apagarAlerta(this.id)"></div>
+                        </td>
+
+                    </tr>
+                    {{/each}}
+
+                </tbody>
+            </table>
+
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2023 Monitorização e Controlo de Água - Solução IoT</p>
+    </footer>
+
+
+    <script>
+        /* Regarrega a pagina de minuto a minuto
+        setTimeout(function () {
+            location.reload(true);
+        }, 60000);
+        */
+        // Sign-out function
+        function sign_out() {
+            localStorage.clear();
+            window.location = "/";
+        }
+
+        function apagarAlerta(alerta) {
+            console.log(alerta);
+
+            fetch('/auth/apagarAlerta', {
+                method: "POST",
+                body: JSON.stringify({
+                    alerta: alerta,
+                }),
+                headers: {
+                    "Content-type": "application/json; charset=UTF-8"
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.delete) {
+                        location.reload(true);
+                    } else {
+                        Swal.fire({
+                            title: 'Aviso',
+                            text: 'Não foi possível apagar a mensagem',
+                            icon: 'error',
+                            confirmButtonText: 'Ok',
+                            confirmButtonColor: '#3DC5EB',
+                        })
+                    }
+                })
+                .catch(error => {
+                    // Manipule o erro aqui
+                    console.error(error);
+                });
+        }
+
+        function lerAlerta(alerta, mensagem, tipo, data) {
+            // Enviar a informacao que a mensagem foi vista 
+            fetch('/auth/lerAlerta', {
+                method: "POST",
+                body: JSON.stringify({
+                    alerta: alerta,
+                }),
+                headers: {
+                    "Content-type": "application/json; charset=UTF-8"
+                }
+            }).then(response => response.json())
+                .then(async data => {
+                    if (data.visto) {
+
+                        console.log(alerta);
+                        console.log(mensagem);
+                        console.log(tipo);
+                        console.log(data);
+
+                        await Swal.fire({
+                            title: "Mensagem recebida",
+                            html: `<h1>` + mensagem + `</h1<`,
+                            confirmButtonText: 'Ok',
+                            confirmButtonColor: '#3DC5EB',
+                        });
+                        location.reload(true);
+
+                    } else {
+                        location.reload(true);
+                    }
+                })
+                .catch(error => {
+                    // Manipule o erro aqui
+                    console.error(error);
+                });
+
+
+        }
+
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.slim.min.js"
+        integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-fQybjgWLrvvRgtW6bFlB7jaZrFsaBXjsOMm/tB9LTS58ONXgqbR9W8oWht/amnpF"
+        crossorigin="anonymous"></script>
+
+</body>
+
+</html>
