@@ -4,12 +4,13 @@
 ***********************************************************************************************************************************************/
 const express = require('express');
 const path = require("path");
-const dotenv = require("dotenv");
 var admin = require("firebase-admin");
 
 const port = 3000;
 const app = express();
 app.use(express.json());
+app.use(bodyParser.json());
+
 
 /***********************************************************************************************************************************************
     Configuracao Firebase 
@@ -22,106 +23,109 @@ admin.initializeApp({
 });
 
 const firestore = admin.firestore();
-const nivel_critico = 10;
+const nivel_critico = 18.51;
+const vazio = 21.68;
 
 
 /***********************************************************************************************************************************************
     Recebe os dados dos sensores e envia para a base de dados
 ***********************************************************************************************************************************************/
 app.post('/sensor_fluxo', (req, res) => {
+
+
     // Guardar os dados num novo documento na coleçao 'consumos'
     firestore.collection('consumos').doc().set({
-        inicioConsumo: req.body.inicioConsumo,
-        data: req.body.fimConsumo,
-        quantidade: req.body.quantidade,
+        data: req.body.data,
+        fluxo: req.body.quantidade,
         idCasa: req.body.id,
     })
         .then(() => {
             // Dados salvos com sucesso
-            res.status(200).send('Dados salvos com sucesso');
+            return res.status(200).send('Dados salvos com sucesso');
+
+            // obter o total de consumos da casa (nesse mes) 
+            let total_consumo = 0;
+
+            /* verificar o limite para a casa em questao 
+            firestore.collection('casa').where('__id', '==', req.body.id).get().then(
+                (querySnapshot) => {
+                    // 
+                });
+                */
         })
         .catch((error) => {
             // Erro ao salvar os dados
             console.error('Erro ao salvar os dados:', error);
-            res.status(500).send('Erro ao salvar os dados');
+            return res.status(500).send('Erro ao salvar os dados');
         });
 
-    // obter o total de consumos da casa (nesse mes) 
-    let total_consumo = 0;
-
-
-    /* verificar o limite para a casa em questao 
-    firestore.collection('casa').where('__id', '==', req.body.id).get().then(
-        (querySnapshot) => {
-            // 
-        });
-        */
-
-    res.sendStatus(200);
 });
 
 app.post('/sensor_nivel', (req, res) => {
     // Criar uma referência para a coleção "consumos"
     firestore.collection('caixaAgua').doc().set({
-        data: req.body.date,
+        data: req.body.data,
         idCondominio: req.body.id,
         nivel: req.body.nivel,
     })
         .then(() => {
             // Dados salvos com sucesso
             console.log("Dados de nivel guardados com sucesso")
+            // Criar alerta que esta a ficar sem agua na caixa de agua
+            if (data.nivel <= nivel_critico) {
+                // Criar novo alerta
+                firestore.collection('alertas').doc().set({
+                    data: new Date(),
+                    enable: true,
+                    idCondominio: req.body.id,
+                    mensagem: "Nível de água na caixa de água em estado crítico",
+                    tipo: "Nível de água",
+                    visto: false
+
+                })
+                    .then(() => {
+                        // Dados salvos com sucesso
+                        console.log("Dados de nivel guardados com sucesso")
+                        return res.sendStatus(200);
+                    })
+                    .catch((error) => {
+                        // Erro ao salvar os dados
+                        console.error('Erro ao salvar os dados:', error);
+                        return res.sendStatus(500);
+                    });
+            }
+            // Criar alerta _ sem agua
+            else if (data.nivel == vazio) {
+                // Criar novo alerta
+                firestore.collection('alertas').doc().set({
+                    data: new Date(),
+                    enable: true,
+                    idCondominio: req.body.id,
+                    mensagem: "A caixa de água encontra-se vazia...",
+                    tipo: "Nível de água",
+                    visto: false
+
+                })
+                    .then(() => {
+                        // Dados salvos com sucesso
+                        console.log("Dados de nivel guardados com sucesso")
+                        return res.sendStatus(200);
+                    })
+                    .catch((error) => {
+                        // Erro ao salvar os dados
+                        console.error('Erro ao salvar os dados:', error);
+                        return res.sendStatus(200);
+                    });
+            }
+            else {
+                return res.sendStatus(200);
+            }
         })
         .catch((error) => {
             // Erro ao salvar os dados
             console.error('Erro ao salvar os dados:', error);
+            return res.sendStatus(500);
         });
-
-    // Criar alerta que esta a ficar sem agua na caixa de agua
-    if (data.nivel <= nivel_critico) {
-        // Criar novo alerta
-        firestore.collection('alertas').doc().set({
-            data: new Date(),
-            enable: true,
-            idCondominio: req.body.id,
-            mensagem: "Nível de água na caixa de água em estado crítico",
-            tipo: "Nível de água",
-            visto: false
-
-        })
-            .then(() => {
-                // Dados salvos com sucesso
-                console.log("Dados de nivel guardados com sucesso")
-            })
-            .catch((error) => {
-                // Erro ao salvar os dados
-                console.error('Erro ao salvar os dados:', error);
-            });
-    }
-    // Criar alerta _ sem agua
-    else if (data.nivel == 0) {
-        // Criar novo alerta
-        firestore.collection('alertas').doc().set({
-            data: new Date(),
-            enable: true,
-            idCondominio: req.body.id,
-            mensagem: "A caixa de água encontra-se vazia...",
-            tipo: "Nível de água",
-            visto: false
-
-        })
-            .then(() => {
-                // Dados salvos com sucesso
-                console.log("Dados de nivel guardados com sucesso")
-            })
-            .catch((error) => {
-                // Erro ao salvar os dados
-                console.error('Erro ao salvar os dados:', error);
-            });
-    }
-    else {
-        res.sendStatus(200);
-    }
-
 });
 
 // Iniciar o servidor
