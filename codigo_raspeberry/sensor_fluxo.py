@@ -4,16 +4,6 @@ import time
 import json
 import requests
 
-# caminho da ligacao ao nodejs
-url = 'http://localhost:3000/sensor_fluxo'
-
-# Criar uma classe ou objeto serializável
-class Dados:
-    def __init__(self, variavel1, variavel2, variavel3):
-        self.id = variavel1
-        self.data = variavel2
-        self.quantidade = variavel3
-
 # Variaveis
 pino_sensor_fluxo = 2
 flow_count = 0
@@ -48,13 +38,18 @@ def main():
 
             flow_rate = calculate_flow(end_count - start_count, end_time - start_time)
                        # Criar uma instância do objeto com os valores
-            dados = Dados('jFEjGUB8wEufOnt4ss1O', end_time, flow_rate)
-
-            # Serializar o objeto para JSON
-            dados_json = json.dumps(dados, default=lambda o: o.__dict__)
+                       
+            casa = "jFEjGUB8wEufOnt4ss1O"           
+            dados = {
+                "id": casa,
+                "data": end_time,
+                "quantidade": flow_rate
+                }
+            
+            print(dados)
 
             # Enviar a solicitação POST para o servidor
-            response = requests.post(url, json=dados_json)
+            response = requests.post('http://localhost:3000/sensor_fluxo', json=dados)
 
     except KeyboardInterrupt:
         print("\nPrograma interrompido pelo utilizador")

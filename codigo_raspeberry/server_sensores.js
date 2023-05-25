@@ -9,8 +9,6 @@ var admin = require("firebase-admin");
 const port = 3000;
 const app = express();
 app.use(express.json());
-app.use(bodyParser.json());
-
 
 /***********************************************************************************************************************************************
     Configuracao Firebase 
@@ -72,10 +70,10 @@ app.post('/sensor_nivel', (req, res) => {
             // Dados salvos com sucesso
             console.log("Dados de nivel guardados com sucesso")
             // Criar alerta que esta a ficar sem agua na caixa de agua
-            if (data.nivel <= nivel_critico) {
+            if (req.body.nivel <= nivel_critico) {
                 // Criar novo alerta
                 firestore.collection('alertas').doc().set({
-                    data: new Date(),
+                    data: req.body.data,
                     enable: true,
                     idCondominio: req.body.id,
                     mensagem: "Nível de água na caixa de água em estado crítico",
@@ -95,10 +93,10 @@ app.post('/sensor_nivel', (req, res) => {
                     });
             }
             // Criar alerta _ sem agua
-            else if (data.nivel == vazio) {
+            else if (req.body.nivel == vazio) {
                 // Criar novo alerta
                 firestore.collection('alertas').doc().set({
-                    data: new Date(),
+                    data: req.body.data,
                     enable: true,
                     idCondominio: req.body.id,
                     mensagem: "A caixa de água encontra-se vazia...",

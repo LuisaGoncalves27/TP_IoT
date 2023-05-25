@@ -1,23 +1,12 @@
+# pip install RPi.GPIO requests 
 import RPi.GPIO as GPIO
 import time
 import json
 import requests
 
 # Configurações do sensor ultrassônico
-TRIG_PIN = 18  # Pino de transmissão (Trig)
-ECHO_PIN = 14  # Pino de recepção (Echo)
-
-# caminho
-url = 'http://localhost:3000/sensor_nivel'
-
-# Criar uma classe ou objeto serializável
-
-
-class Dados:
-    def __init__(self, variavel1, variavel2):
-        self.data = variavel1
-        self.nivel = variavel2
-
+TRIG_PIN = 20  # Pino de transmissão (Trig)
+ECHO_PIN = 21  # Pino de recepção (Echo)
 
 # Configuração do GPIO
 GPIO.setmode(GPIO.BCM)
@@ -25,8 +14,6 @@ GPIO.setup(TRIG_PIN, GPIO.OUT)
 GPIO.setup(ECHO_PIN, GPIO.IN)
 
 # Função para medir o nível de água
-
-
 def medir_nivel_agua():
     # Dispara o pulso ultrassônico
     GPIO.output(TRIG_PIN, GPIO.HIGH)
@@ -58,10 +45,15 @@ try:
         tempo_atual = time.time()
 
         # Enviar a solicitação POST para o servidor
-        dados = Dados(tempo_atual, nivel_agua)
-        dados_json = json.dumps(dados, default=lambda o: o.__dict__)
+        dados = {
+            "id": 'MbhdRaK1sGkuRsK3Ic8r',
+             "data": tempo_atual,
+             "nivel": nivel_agua
+             }
+            
+        print(dados)
 
-        response = requests.post(url, json=dados_json)
+        response = requests.post('http://localhost:3000/sensor_nivel', json=dados)
 
         # Aguarda um intervalo de 1 segundo antes da próxima medição
         time.sleep(1)
