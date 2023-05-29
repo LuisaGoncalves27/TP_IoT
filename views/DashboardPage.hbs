@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt">
 
 <head>
     <meta charset="UTF-8">
@@ -17,7 +17,6 @@
 <body>
 
     <nav class="navbarDashboard">
-
         <div class="mb-3">
             <div class="navbarDashboardImage"></div>
             <h5>{{user_nome}}</h5>
@@ -44,12 +43,29 @@
 
     <main>
         <div class="conteudo">
-            <div>
-                <p> Grafico fluxo </p>
+            <div class="chart_container_consumo">
+
+                <h2 class="conteudo_titulo_grafico"> Consumos: </h2>
+
+                <div id="chart_titulo" class="chart_titulo">
+                    <button class="buttonOpcoes2" onclick="previous()"></button>
+                    <p class="data_selecionada"></p>
+                    <button class="buttonOpcoes3" onclick="next()"></button>
+                </div>
+
+                <div id="chart_consumo" class="chart"></div>
+                <div id="tooltip" style="position: absolute;"></div>
+
+                <div class="opcoes">
+                    <h5 class="legenda"> Visualizar os dados por: </h5>
+                    <button class="buttonOpcoes" onclick="drawChart('mes')">Mes</button>
+                    <button class="buttonOpcoes" onclick="drawChart('semana')">Semana</button>
+                    <button class="buttonOpcoes" onclick="drawChart('dia')">Dia</button>
+                    <button class="buttonOpcoes" onclick="drawChart('hora')">Hora</button>
+                </div>
+
             </div>
-            <div>
-                <p> Grafico qualidade</p>
-            </div>
+
 
         </div>
     </main>
@@ -58,13 +74,370 @@
         <p>&copy; 2023 Monitorização e Controlo de Água - Solução IoT</p>
     </footer>
 
+    <script src="https://d3js.org/d3.v4.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
 
     <script>
+        // Auxiliares: 
+        const data_atual = new Date();
+        var dia_selecionado = data_atual.getDate();
+        var hora_selecionado = data_atual.getHours();
+        var mes_selecionado = data_atual.getMonth();
+        var ano_selecionado = data_atual.getFullYear();
+        var escala = 'mes';
+
+        // set the dimensions and margins of the graph
+        // Obtém a largura da janela
+        var windowWidth = window.innerWidth || document.documentElement.clientWidth
+        var margin = { top: 10, right: 30, bottom: 30, left: 60 },
+            width = (windowWidth - 260) - margin.left - margin.right,
+            height = 460 - margin.top - margin.bottom;
+
+        // append the svg object to the body of the page
+        var svg = d3.select("#chart_consumo")
+            .append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+            .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+        /* dados de exemplo: 
+        var fluxo = [
+            {
+                casa: "1 B",
+                consumo: [
+                    { data: "01/05/2023 19:48:11", quantidade: 12 },
+                    { data: "02/05/2023 08:48:11", quantidade: 15 },
+                    { data: "03/05/2023 19:48:11", quantidade: 19 },
+                    { data: "29/05/2023 19:47:11", quantidade: 10 },
+                    { data: "29/05/2023 19:48:11", quantidade: 13 },
+                    // ...
+                ],
+            },
+            {
+                casa: "1 A",
+                consumo: [
+                    { data: "01/01/2023 19:48:11", quantidade: 9 },
+                    { data: "02/05/2023 08:48:11", quantidade: 15 },
+                    { data: "03/05/2023 19:48:11", quantidade: 19 },
+                    { data: "29/05/2023 19:47:11", quantidade: 12 },
+                    { data: "29/05/2023 19:48:11", quantidade: 12 },
+                    { data: "29/05/2023 19:49:11", quantidade: 11 },
+                    { data: "29/05/2023 19:50:11", quantidade: 12 },
+                    { data: "29/05/2023 19:51:11", quantidade: 11 },
+                    { data: "29/05/2023 19:52:11", quantidade: 11 },
+                    // ...
+                ],
+            },
+        ];
+        console.log(fluxo)
+        */
+
+        var fluxo = JSON.parse('{{{json fluxo}}}');
+        console.log(fluxo);
+
+
+        function drawChart(scale) {
+            var parseDate = d3.timeParse("%d/%m/%Y %H:%M:%S");// Formata a data 
+            svg.selectAll("*").remove();                      // Limpa o SVG existente
+            var color = d3.scaleOrdinal(d3.schemeCategory10); // Palete de cores
+            var tooltip = d3.select("#tooltip");              // Tooltip
+            var filteredData = [], xValues;                            // Dados a serem mostrados no grafico
+
+            if (scale === "mes") {
+                escala = 'mes';
+
+                // Filtrar os dados pelo mês selecionado
+                var filteredData = fluxo.map(function (obj) {
+                    return {
+                        casa: obj.casa,
+                        consumo: obj.consumo.filter(function (d) {
+                            var date = moment(d.data, "DD/MM/YYYY HH:mm:ss");
+                            d.data = date;
+                            return date.month() === mes_selecionado;
+                        }),
+                    };
+                });
+
+                // Cria os diferentes valores do eixo dos XX 
+                var inicio_mes = new Date(ano_selecionado, mes_selecionado, 1);
+                var fim_mes = new Date(ano_selecionado, mes_selecionado + 1, 0);
+                xValues = d3.timeDays(inicio_mes, fim_mes);
+                xValues.push(fim_mes);
+
+                // Legenda do eixo dos XX: 
+                var data_aux_mes = new Date();
+                data_aux_mes.setMonth(mes_selecionado);
+                d3.select(".data_selecionada")
+                    .text("Mês: " + data_aux_mes.toLocaleString('pt-PT', { month: 'long' }));
+
+                console.log(filteredData)
+
+            } else if (scale === "semana") {
+                escala = 'semana';
+
+                // Cria os diferentes valores do eixo dos XX 
+                var aux_m = Number(mes_selecionado) + 1;
+                if (aux_m < 10) aux_m = "0" + aux_m;
+                var aux_d = Number(dia_selecionado);
+                if (aux_d < 10) aux_d = "0" + aux_d;
+
+                const selectedDate = ano_selecionado + "-" + aux_m + "-" + aux_d;
+                var inicio_semana = moment(selectedDate).startOf('week').day(0);
+                var fim_semana = moment(selectedDate).startOf('week').day(6);
+                xValues = d3.timeDays(inicio_semana, fim_semana);
+                xValues.push(fim_semana);
+
+                // Filtrar os dados pela semana selecionada
+                var filteredData = fluxo.map(function (obj) {
+                    return {
+                        casa: obj.casa,
+                        consumo: obj.consumo.filter(function (d) {
+                            var date = moment(d.data, "DD/MM/YYYY HH:mm:ss");
+                            d.data = date;
+                            return date.isBetween(inicio_semana, fim_semana, null, '[]');
+                        }),
+                    };
+                });
+
+                // Legenda do eixo dos XX: 
+                d3.select(".data_selecionada")
+                    .text("Semana: " + inicio_semana.format("DD/MM/YYYY"));
+
+            } else if (scale === "dia") {
+                escala = 'dia';
+
+                // Cria os diferentes valores do eixo dos XX 
+                var aux_m = Number(mes_selecionado) + 1;
+                if (aux_m < 10) aux_m = "0" + aux_m;
+                var aux_d = Number(dia_selecionado);
+                if (aux_d < 10) aux_d = "0" + aux_d;
+
+                const selectedDate = ano_selecionado + "-" + aux_m + "-" + aux_d;
+                var dia = moment(selectedDate).startOf('day');
+                var fim_dia = moment(selectedDate).endOf('day').subtract(0, 'minute');
+                xValues = d3.timeHours(dia, fim_dia);
+                xValues.push(fim_dia);
+
+                // Filtrar os dados pela semana selecionada
+                var filteredData = fluxo.map(function (obj) {
+                    return {
+                        casa: obj.casa,
+                        consumo: obj.consumo.filter(function (d) {
+                            var date = moment(d.data, "DD/MM/YYYY HH:mm:ss");
+                            d.data = date;
+                            return date.date() === dia.date() &&
+                                date.month() === dia.month() &&
+                                date.year() === dia.year()
+                        }),
+                    };
+                });
+
+                // Legenda do eixo dos XX: 
+                d3.select(".data_selecionada")
+                    .text("Data: " + dia.format("DD/MM/YYYY"));
+
+            } else if (scale === "hora") {
+                escala = 'hora';
+
+                // Cria os diferentes valores do eixo dos XX 
+                var aux_m = Number(mes_selecionado) + 1;
+                if (aux_m < 10) aux_m = "0" + aux_m;
+                var aux_d = Number(dia_selecionado);
+                if (aux_d < 10) aux_d = "0" + aux_d;
+                var aux_h = Number(hora_selecionado);
+                if (aux_h < 10) aux_h = "0" + aux_h;
+
+                const selectedDate = ano_selecionado + "-" + aux_m + "-" + aux_d + " " + aux_h + ":00:00";
+                var inicio_hora = moment(selectedDate);
+                var fim_hora = moment(selectedDate).add(60, 'minute');
+                xValues = d3.timeMinute.every(2).range(inicio_hora, fim_hora);;
+                xValues.push(fim_hora);
+
+                // Filtrar os dados pela semana selecionada
+                var filteredData = fluxo.map(function (obj) {
+                    return {
+                        casa: obj.casa,
+                        consumo: obj.consumo.filter(function (d) {
+                            var date = moment(d.data, "DD/MM/YYYY HH:mm:ss");
+                            d.data = date;
+                            return date.hour() === inicio_hora.hour() &&
+                                date.date() === inicio_hora.date() &&
+                                date.month() === inicio_hora.month() &&
+                                date.year() === inicio_hora.year()
+                        }),
+                    };
+                });
+
+                console.log(filteredData);
+
+                // Legenda do eixo dos XX: 
+                d3.select(".data_selecionada")
+                    .text("Data: " + inicio_hora.format("DD/MM/YYYY HH:mm"));
+            }
+
+            // Definir o eixo dos XX
+            var x = d3
+                .scaleTime()
+                .domain(d3.extent(xValues))
+                .range([0, width]);
+
+            var xAxis = d3.axisBottom(x)
+                .tickValues(xValues) // Define os valores do array xValues como marcações no eixo X
+                .tickFormat(function (d) {
+                    if (scale == 'mes')
+                        return d3.timeFormat("%d")(d); // Formato para exibir apenas o dia
+                    else if (scale == 'semana')
+                        return d3.timeFormat("%d/%m")(d);
+                    else if (scale == 'dia')
+                        return d3.timeFormat("%H:%M")(d);
+                    else if (scale == 'hora')
+                        return d3.timeFormat("%M")(d);
+                });
+
+            svg.append("g")
+                .attr("transform", "translate(0," + height + ")")
+                .call(xAxis);
+
+            // Define o eixo dos YY: 
+            var y = d3
+                .scaleLinear()
+                .domain([
+                    0,
+                    d3.max(filteredData, function (d) {
+                        return d3.max(d.consumo, function (c) {
+                            return c.quantidade;
+                        });
+                    }),
+                ])
+                .range([height, 0]);
+
+            svg.append("g").call(d3.axisLeft(y));
+
+            // Desenha os pontos correspondentes às medidas de fluxo no gráfico: 
+            filteredData.forEach(function (d) {
+                svg.selectAll(".circle-" + d.casa) // Use uma classe única para cada conjunto de dados
+                    .data(d.consumo)
+                    .enter()
+                    .append("circle")
+                    .attr("class", "circle circle-" + d.casa) // Adicione a classe única
+                    .attr("cx", function (c) {
+                        return x(c.data);
+                    })
+                    .attr("cy", function (c) {
+                        return y(c.quantidade);
+                    })
+                    .attr("r", 1.5) // raio do círculo
+                    .style("fill-opacity", 0.5) // Definir opacidade de preenchimento
+                    .attr("fill", color(d.casa))
+                    .on("mouseover", function (event, c) {
+                        tooltip
+                            .style("left", d3.event.pageX + 10 + "px")
+                            .style("top", d3.event.pageY + 10 + "px")
+                            .text("Data: " + d.consumo[c].data.format("DD/MM/YYYY HH:mm:ss") + "\nQuantidade: " + d.consumo[c].quantidade)
+                            .style("display", "block");
+                    })
+                    .on("mouseout", function () {
+                        tooltip.style("display", "none");
+                    });
+
+                // Add legends
+                svg
+                    .append("text")
+                    .attr("x", width - 5)
+                    .attr("y", y(d.consumo[d.consumo.length - 1].quantidade))
+                    .attr("dy", "0.35em")
+                    .style("text-anchor", "end")
+                    .style("font-size", "12px")
+                    .style("fill", color(d.casa))
+                    .text(d.casa);
+            });
+
+        }
+
+        drawChart('mes');
+
         // Sign-out function
         function sign_out() {
             localStorage.clear();
             window.location = "/";
         }
+
+        function previous() {
+            var aux_m = Number(mes_selecionado) + 1;
+            if (aux_m < 10) aux_m = "0" + aux_m;
+            var aux_d = Number(dia_selecionado);
+            if (aux_d < 10) aux_d = "0" + aux_d;
+            var aux_h = Number(hora_selecionado);
+            if (aux_h < 10) aux_h = "0" + aux_h;
+
+            const selectedDate = ano_selecionado + "-" + aux_m + "-" + aux_d + " " + aux_h + ":00:00";
+            var data_alterar = moment(selectedDate);
+
+            if (escala == 'mes') {
+                console.log("Subtrari um mes a " + data_alterar);
+                data_alterar.subtract(1, 'months');
+            }
+            if (escala == 'semana') {
+                console.log("Subtrari uma semana a " + data_alterar);
+                data_alterar.subtract(1, 'weeks');
+
+            }
+            if (escala == 'dia') {
+                console.log("Subtrari um dia a " + data_alterar);
+                data_alterar.subtract(1, 'days');
+
+            }
+            if (escala == 'hora') {
+                console.log("Subtrari uma hora a " + data_alterar);
+                data_alterar.subtract(1, 'hours');
+            }
+
+            dia_selecionado = data_alterar.date();
+            hora_selecionado = data_alterar.hour();
+            mes_selecionado = data_alterar.month();
+            ano_selecionado = data_alterar.year();
+            drawChart(escala);
+
+        }
+
+        function next() {
+            var aux_m = Number(mes_selecionado) + 1;
+            if (aux_m < 10) aux_m = "0" + aux_m;
+            var aux_d = Number(dia_selecionado);
+            if (aux_d < 10) aux_d = "0" + aux_d;
+            var aux_h = Number(hora_selecionado);
+            if (aux_h < 10) aux_h = "0" + aux_h;
+
+            const selectedDate = ano_selecionado + "-" + aux_m + "-" + aux_d + " " + aux_h + ":00:00";
+            var data_alterar = moment(selectedDate);
+
+            if (escala == 'mes') {
+                console.log("Subtrari um mes a " + data_alterar);
+                data_alterar.add(1, 'months');
+            }
+            if (escala == 'semana') {
+                console.log("Subtrari uma semana a " + data_alterar);
+                data_alterar.add(1, 'weeks');
+
+            }
+            if (escala == 'dia') {
+                console.log("Subtrari um dia a " + data_alterar);
+                data_alterar.add(1, 'days');
+
+            }
+            if (escala == 'hora') {
+                console.log("Subtrari uma hora a " + data_alterar);
+                data_alterar.add(1, 'hours');
+            }
+
+            dia_selecionado = data_alterar.date();
+            hora_selecionado = data_alterar.hour();
+            mes_selecionado = data_alterar.month();
+            ano_selecionado = data_alterar.year();
+            drawChart(escala);
+        }
+
 
 
     </script>
@@ -75,6 +448,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-fQybjgWLrvvRgtW6bFlB7jaZrFsaBXjsOMm/tB9LTS58ONXgqbR9W8oWht/amnpF"
         crossorigin="anonymous"></script>
+
 
 </body>
 

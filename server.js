@@ -7,6 +7,9 @@ const path = require("path");
 const dotenv = require("dotenv");
 const bcrypt = require("bcrypt");
 const session = require("express-session");
+var admin = require("firebase-admin");
+const moment = require('moment');
+const hbs = require('hbs');
 
 
 /***********************************************************************************************************************************************
@@ -14,6 +17,7 @@ const session = require("express-session");
 ***********************************************************************************************************************************************/
 const app = express();
 dotenv.config({ path: "./.env" });
+
 // sessão
 app.use(session({
     secret: 'secret',
@@ -29,11 +33,15 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.set("view engine", "hbs");
 
+// Registrar um helper personalizado 'json' para serializar um objeto como uma string JSON
+hbs.registerHelper('json', function (context) {
+    return JSON.stringify(context);
+});
+
 
 /***********************************************************************************************************************************************
                                                 Configuracao Firebase 
 ***********************************************************************************************************************************************/
-var admin = require("firebase-admin");
 var serviceAccount = require('./trabalhopratico-iot-firebase-adminsdk-b3zmt-1dcbd69d04.json');
 
 admin.initializeApp({
@@ -53,7 +61,6 @@ app.get("/", (req, res) => {
     req.session.auxiliar_logged = false;
     req.session.user_name = "";
     req.session.user_email = "";
-    req.session.idCaixaAgua = "";
     req.session.condominio = "";
     req.session.customToken = "";
     return res.render("LandingPage");
@@ -66,7 +73,6 @@ app.get("/sign-in", (req, res) => {
         req.session.auxiliar_logged = false;
         req.session.user_name = "";
         req.session.user_email = "";
-        req.session.idCaixaAgua = "";
         req.session.condominio = "";
         req.session.customToken = "";
         return res.render("SignIn", { erro: false, msg_erro: true });
@@ -91,7 +97,6 @@ app.post("/sign-in", async (req, res) => {
                         req.session.logged = true;
                         req.session.user_name = doc.data().nome;
                         req.session.user_email = req.body.email;
-                        req.session.idCaixaAgua = doc.data().idCaixaAgua;
                         req.session.condominio = doc.data().condominio;
                         req.session.customToken = admin.auth().createCustomToken(doc.id);
 
@@ -120,22 +125,64 @@ app.post("/sign-in", async (req, res) => {
 app.get("/auth/dashboard", async (req, res) => {
     const queryCasa = firestore.collection('casa').where('idCondominio', '==', req.session.user_id);
     const queryAlerta = firestore.collection('alertas').where('idCondominio', '==', req.session.user_id).where('visto', '==', false).where('enable', '==', true);
+    const queryNivel = firestore.collection('caixaAgua').where('idCondominio', '==', req.session.user_id);
 
     if (req.session.logged == true) {
-        var casas = [], alertas_nao_lidos = 0, graficoFluxo, graficoQualidade;
+        let casas = [], alertas_nao_lidos = 0, dados_Fluxo = [], dados_Nivel = [];
 
-        casas = await queryCasa.get().then(
-            (querySnapshot) => {
-                return querySnapshot.docs;
+        const querySnapshot = await queryCasa.get();
+        for (const doc of querySnapshot.docs) {
+            console.log("Id casa: " + doc.id);
+
+            const consumoSnapshot = await firestore
+                .collection('consumos')
+                .where('idCasa', '==', doc.id)
+                .get();
+
+            let dadosConsumo = [];
+
+            consumoSnapshot.forEach((consumoDoc) => {
+                const date = new Date(consumoDoc.data().data * 1000);
+                const aux_data = moment(date).format('DD/MM/YYYY HH:mm:ss');
+                console.log(aux_data);
+                dadosConsumo.push({ data: aux_data, quantidade: consumoDoc.data().quantidade });
             });
+
+            dados_Fluxo.push({ casa: doc.data().endereco, consumo: dadosConsumo });
+        }
+        casas = querySnapshot.docs;
+
+        dados_Nivel = await queryNivel.get().then((query) => {
+            var dados_query = [];
+            // Loop dos dados de nivel do condominio
+            query.forEach((doc2) => {
+                const date = new Date(doc2.data().data * 1000); // Converter o número do timestamp em um objeto Date
+                const aux_data = moment(date).format('DD/MM/YYYY HH:mm:ss');
+
+                console.log(aux_data);
+                dados_query.push({ data: aux_data, nivel: doc2.data().nivel })
+
+            });
+
+            return dados_query;
+        });
 
         alertas_nao_lidos = await queryAlerta.get().then(
             (querySnapshot) => {
                 return querySnapshot.docs.length;
             });
 
+        dados_Fluxo.forEach(obj => {
+            console.log(obj.casa);
+            obj.consumo.forEach(obj1 => {
+                console.log(obj1);
 
-        return res.render('DashboardPage', { user_nome: req.session.user_name, user_condominio: req.session.condominio, user_casas: casas.length, alertas_nao_lidos: alertas_nao_lidos, graficoFluxo: graficoFluxo, graficoQualidade: graficoQualidade });
+            });
+        });
+
+        // const dados_Fluxo_aux = JSON.stringify(dados_Fluxo);
+        return res.render('DashboardPage', { user_nome: req.session.user_name, user_condominio: req.session.condominio, user_casas: casas.length, alertas_nao_lidos: alertas_nao_lidos, fluxo: dados_Fluxo, nivel: dados_Nivel });
+
     } else {
         req.session.auxiliar_logged = true;
         return res.redirect('/sign-in');
@@ -166,16 +213,17 @@ app.get("/auth/alertas", async (req, res) => {
                 if (!querySnapshot.empty) {
                     var aux_alertas = [];
                     querySnapshot.forEach((doc) => {
-                        const options = { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' };
-                        const date = doc.data().data.toDate();
-                        const aux_data = date.toLocaleString('pt-PT', options);
+                        const date = new Date(doc.data().data * 1000); // Converter o número do timestamp em um objeto Date
+                        const aux_data = moment(date).format('DD/MM/YYYY HH:mm:ss');
 
-                        aux_alertas.push({ alerta_id: doc.id, data: aux_data, mensagem: doc.data().mensagem, tipo: doc.data().tipo, visto: doc.data().visto })
+                        aux_alertas.push({ alerta_id: doc.id, data_aux: doc.data().data, data: aux_data, mensagem: doc.data().mensagem, tipo: doc.data().tipo, visto: doc.data().visto })
                     });
                     return aux_alertas;
                 }
                 else return [];
             });
+
+        alertas.sort(function (a, b) { return b.data_aux - a.data_aux });
 
         return res.render('Alertas', { user_nome: req.session.user_name, user_condominio: req.session.condominio, user_casas: casas.length, alertas_nao_lidos: alertas_nao_lidos, alertas: alertas });
     }

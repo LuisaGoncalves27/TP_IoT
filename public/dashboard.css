@@ -155,6 +155,88 @@
     padding: 10px 10px;
 }
 
+/* Dashboard */
+.chart_titulo {
+    width: 100%;
+    height: 7vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;   
+}
+
+.data_selecionada{
+    margin: 5px 0;
+    padding: 5px 0;
+    color: var(--cor3);
+    font-size: 20px;
+}
+
+.buttonOpcoes2 {
+    width: 30px;
+    height: 30px;
+    margin-right: 5%;
+    background-image: url('./next.png');
+    background-color: transparent;
+    background-repeat: none;
+    background-size: cover;
+    border:none; 
+}
+
+.buttonOpcoes3 {
+    width: 30px;
+    height: 30px;
+    margin-left: 5%;
+    background-image: url('./next.png');
+    background-repeat: repeat-y;
+    transform: rotate(180deg);
+    background-color: transparent;
+    background-size: cover;
+    border:none; 
+}
+
+
+.chart_container_consumo {
+    width: 100%;
+    height: 70vh;
+    background-color: transparent;
+    align-items: left;
+    margin: 1vh 0;
+}
+
+
+
+.conteudo_titulo_grafico {
+    width: 100%;
+    color: var(--cor4);
+    padding: 10px 10px;
+    text-align: left;
+}
+
+.chart {
+    width: 100%;
+    float: left;
+}
+
+.opcoes {
+    width: 95%;
+    float: left;
+    margin: 10px;
+}
+
+.buttonOpcoes {
+    left: 10%;
+    width: 150px;
+    padding: 2px 20px;
+    margin: 10px 2%;
+    text-align: center;
+    color: white;
+    font-size: 20px;
+    border: none;
+    border-radius: 7px;
+    font-style: bold;
+    background-color: var(--cor4);
+}
+
 /* Tabela dos alertas*/
 .table {
     width: 100%;
@@ -175,13 +257,13 @@ td {
     border-bottom: 1px solid var(--cor3);
 }
 
-.corpo_tabelea tr.visto {
+.corpo_tabelea tr.true {
     background-color: white;
     /* cor de fundo para linhas lidas */
 }
 
-.corpo_tabela tr.nao_visto {
-    background-color: var(--cor2);
+.corpo_tabela tr.false {
+    background-color: var(--cor1);
 }
 
 
@@ -279,7 +361,7 @@ td {
     background-color: var(--cor6);
 }
 
-.imagem-tabela-editar{
+.imagem-tabela-editar {
     background-color: transparent;
     background-position: center center;
     background-repeat: no-repeat;
@@ -290,4 +372,3 @@ td {
     padding: 4px 10px;
     margin: 0 10px;
 }
-
