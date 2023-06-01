@@ -73,7 +73,6 @@
                         <tr>
                             <th>Nº Porta </th>
                             <th>Proprietário</th>
-                            <th>Limites</th>
                             <th> </th>
                         </tr>
                     </thead>
@@ -83,10 +82,9 @@
                         <tr>
                             <td>{{endereco}}</td>
                             <td>{{proprietario}}</td>
-                            <td>{{limites}}</td>
                             <td>
-                                <div class="imagem-tabela-editar" id="{{alerta_id}}"
-                                    onclick="editarCasa(this.id, '{{endereco}}', '{{proprietario}}', '{{limites}}' )">
+                                <div class="imagem-tabela-editar" id="{{id}}"
+                                    onclick="editarCasa(this.id, '{{endereco}}', '{{proprietario}}')">
                                 </div>
                             </td>
                         </tr>
@@ -205,10 +203,10 @@
                         Swal.showValidationMessage('Password inválida!')
                     }
                     else if (document.getElementById('newPassword').value.length < 10) {
-                        Swal.showValidationMessage('Formato de email inválido!')
+                        Swal.showValidationMessage('A nova palavra-passe deve ter pelo menos 10 caracteres!')
                     }
                     else if (document.getElementById('confirmPassword').value.length < 10) {
-                        Swal.showValidationMessage('Formato de email inválido!')
+                        Swal.showValidationMessage('A palavra-passe de confirmação não tem pelo menos 10 caracteres!')
                     }
                     else if (document.getElementById('newPassword').value !== document.getElementById('confirmPassword').value) {
                         Swal.showValidationMessage('A nova palavra-passe e a palavra-passe de confirmação não coincidem!')
@@ -216,10 +214,12 @@
                     else {
                         return { atualizar: true }
                     }
-
                 }
+                //     $2b$15$TvUpOXp9XExJQrEdgdgMvu2fzCdG9giD/MnywJIt9MF48nNttZFNW
             }).then(async (result) => {
                 if (result.isConfirmed) {
+                    let password = document.getElementById('currentPassword').value; 
+                    let password2= document.getElementById('newPassword').value;
 
                     Swal.fire({
                         title: '',
@@ -232,8 +232,8 @@
                     fetch('/auth/password', {
                         method: "POST",
                         body: JSON.stringify({
-                            pass: document.getElementById('currentPassword').value,
-                            pass1: document.getElementById('newPassword').value,
+                            pass: password,
+                            pass1: password2,
                         }),
                         headers: {
                             "Content-type": "application/json; charset=UTF-8"
@@ -268,7 +268,7 @@
             });
         }
 
-        function editarCasa(id, endereco, proprietario, limites) {
+        function editarCasa(id, endereco, proprietario) {
             Swal.fire({
                 title: 'Editar ' + endereco,
                 html: `
@@ -302,27 +302,21 @@
                 <div class="dados">
                     <label for="currentPassword"> Propietario:</label>
                     <input type="text" id="proprietario" value="`+ proprietario + `">
-                    <label for="newPassword">Limites:</label>
-                    <input type="number" id="limites"  value="`+ limites + `">
-
                 </div>
                 `,
                 confirmButtonText: 'Alterar',
                 confirmButtonColor: '#3DC5EB',
                 showCloseButton: true,
                 preConfirm: () => {
-                    if (document.getElementById('limites').value < 0) {
-                        Swal.showValidationMessage('Valor inválido para limite'); 
-                    }
-                    else {
-                        return { atualizar: true }
-                    }
+                    return { atualizar: true }
                 }
             }).then(async (result) => {
                 if (result.isConfirmed) {
+                    let nome_proprietario = document.getElementById('proprietario').value
+                    console.log(nome_proprietario);
 
                     Swal.fire({
-                        title: 'Atualizar dados da casa'+ endereco,
+                        title: 'Atualizar dados da casa' + endereco,
                         timer: 4000,
                         timerProgressBar: true,
                         showConfirmButton: false,
@@ -332,8 +326,7 @@
                         method: "POST",
                         body: JSON.stringify({
                             casa: id,
-                            proprietario: document.getElementById('proprietario').value,
-                            limites: document.getElementById('limites').value,
+                            proprietario: nome_proprietario,
                         }),
                         headers: {
                             "Content-type": "application/json; charset=UTF-8"

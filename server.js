@@ -127,12 +127,13 @@ app.get("/auth/dashboard", async (req, res) => {
     const queryAlerta = firestore.collection('alertas').where('idCondominio', '==', req.session.user_id).where('visto', '==', false).where('enable', '==', true);
     const queryNivel = firestore.collection('caixaAgua').where('idCondominio', '==', req.session.user_id);
 
+
     if (req.session.logged == true) {
         let casas = [], alertas_nao_lidos = 0, dados_Fluxo = [], dados_Nivel = [];
 
         const querySnapshot = await queryCasa.get();
         for (const doc of querySnapshot.docs) {
-            console.log("Id casa: " + doc.id);
+            // console.log("Id casa: " + doc.id);
 
             const consumoSnapshot = await firestore
                 .collection('consumos')
@@ -144,7 +145,6 @@ app.get("/auth/dashboard", async (req, res) => {
             consumoSnapshot.forEach((consumoDoc) => {
                 const date = new Date(consumoDoc.data().data * 1000);
                 const aux_data = moment(date).format('DD/MM/YYYY HH:mm:ss');
-                console.log(aux_data);
                 dadosConsumo.push({ data: aux_data, quantidade: consumoDoc.data().quantidade });
             });
 
@@ -159,7 +159,6 @@ app.get("/auth/dashboard", async (req, res) => {
                 const date = new Date(doc2.data().data * 1000); // Converter o número do timestamp em um objeto Date
                 const aux_data = moment(date).format('DD/MM/YYYY HH:mm:ss');
 
-                console.log(aux_data);
                 dados_query.push({ data: aux_data, nivel: doc2.data().nivel })
 
             });
@@ -172,6 +171,8 @@ app.get("/auth/dashboard", async (req, res) => {
                 return querySnapshot.docs.length;
             });
 
+        // Permite ver os dados do consumo 
+        /*     
         dados_Fluxo.forEach(obj => {
             console.log(obj.casa);
             obj.consumo.forEach(obj1 => {
@@ -179,6 +180,7 @@ app.get("/auth/dashboard", async (req, res) => {
 
             });
         });
+*/
 
         // const dados_Fluxo_aux = JSON.stringify(dados_Fluxo);
         return res.render('DashboardPage', { user_nome: req.session.user_name, user_condominio: req.session.condominio, user_casas: casas.length, alertas_nao_lidos: alertas_nao_lidos, fluxo: dados_Fluxo, nivel: dados_Nivel });
@@ -302,7 +304,7 @@ app.get("/auth/configuracoes", async (req, res) => {
                 if (!querySnapshot.empty) {
                     var aux_casas = [];
                     querySnapshot.forEach((doc) => {
-                        aux_casas.push({ id: doc.id, endereco: doc.data().endereco, limites: doc.data().limites, proprietario: doc.data().proprietario })
+                        aux_casas.push({ id: doc.id, endereco: doc.data().endereco, proprietario: doc.data().proprietario })
                     });
                     return aux_casas;
                 }
@@ -407,16 +409,13 @@ app.post("/auth/atualizarPerfil", async (req, res) => {
 
 // Atualizar dados das casas: 
 app.post("/auth/atualizarCasa", (req, res) => {
-    console.log(req.body);
-
     firestore.collection('casa')
-        .doc(req.body.id)
+        .doc(req.body.casa)
         .update({
             proprietario: req.body.proprietario,
-            limites: req.body.limites
+            // limites: req.body.limites
         })
         .then(async () => {
-            console.log("Atualizar os dados da cassa");
             return res.send({ update_casa: true });
         })
         .catch((error) => {
@@ -428,5 +427,3 @@ app.post("/auth/atualizarCasa", (req, res) => {
 app.listen(String(process.env.port), () => {
     console.log("Server started...")
 });
-
-
