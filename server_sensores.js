@@ -34,7 +34,7 @@ app.post('/sensor_fluxo', (req, res) => {
     // Guardar os dados num novo documento na coleçao 'consumos'
     firestore.collection('consumos').doc().set({
         data: req.body.data,
-        fluxo: req.body.quantidade,
+        quantidade: req.body.quantidade,
         idCasa: req.body.id,
     })
         .then(() => {
@@ -58,8 +58,12 @@ app.post('/sensor_fluxo', (req, res) => {
 
 });
 
-app.post('/sensor_nivel', (req, res) => {
+/***********************************************************************************************************************************************
+    Recebe os dados dos sensores e envia para a base de dados
+***********************************************************************************************************************************************/
 
+// (Esta a dar o erro de return head)
+app.post('/sensor_nivel', (req, res) => {
     // Criar uma referência para a coleção "consumos"
     firestore.collection('caixaAgua').doc().set({
         data: req.body.data,
@@ -140,9 +144,6 @@ app.post('/sensor_nivel', (req, res) => {
                         console.error('Erro ao salvar os dados:', error);
                         return res.sendStatus(200);
                     });
-            }
-            else {
-                return res.sendStatus(200);
             }
         })
         .catch((error) => {
