@@ -42,13 +42,6 @@ app.post('/sensor_fluxo', (req, res) => {
             return res.status(200).send('Dados salvos com sucesso');
             // obter o total de consumos da casa (nesse mes) 
             let total_consumo = 0;
-
-            /* verificar o limite para a casa em questao 
-            firestore.collection('casa').where('__id', '==', req.body.id).get().then(
-                (querySnapshot) => {
-                    // 
-                });
-                */
         })
         .catch((error) => {
             // Erro ao salvar os dados
@@ -96,12 +89,16 @@ async function verificarAlertas(req) {
 
     // Atualizar o array de alerta_critico
     if (ultimo_alerta_Critico >= 0) {
-        console.log("Atualizar o array de alertas criticos");
         const variacao = alerta_Critico[ultimo_alerta_Critico].nivel - req.body.nivel;
-        if (Math.abs(variacao) > 0.6 && variacao > 0)
+        console.log(alerta_Critico[ultimo_alerta_Critico]);
+        console.log(req.body.nivel);
+        if (alerta_Critico[ultimo_alerta_Critico].nivel < req.body.nivel && variacao > 0.3) {
+            console.log("Atualizar o array de alertas criticos");
             alerta_Critico[ultimo_alerta_Critico] = dados_sensor;
-        else
+        } else {
+            console.log("Remover o sensor o array de alertas criticos");
             alerta_Critico.splice(ultimo_alerta_Critico, 1);
+        }
     }
     else if (req.body.nivel >= nivel_critico && req.body.nivel < vazio) {
         console.log("Criar alerta _ critico");
