@@ -67,8 +67,8 @@ app.post('/sensor_nivel', (req, res) => {
             // Dados salvos com sucesso
             console.log("Dados de nivel guardados com sucesso");
             await verificarAlertas(req);
+            console.log("***************************************************************************************************");
             return res.sendStatus(200);
-
         })
         .catch((error) => {
             // Erro ao salvar os dados
@@ -79,46 +79,74 @@ app.post('/sensor_nivel', (req, res) => {
 
 // funcao auxiliar que irá criar os alertas de nivel crítico ou vazio (quando aplicável)
 async function verificarAlertas(req) {
+    console.log("***************************************************************************************************");
     let dados_sensor = {
         idCondominio: req.body.id,
         nivel: req.body.nivel,
     }
 
-    const ultimo_alerta_Critico = alerta_Critico.findIndex(alerta => alerta.idCondominio === req.body.id);
-    const ultimo_alerta_Vazio = alerta_Vazio.findIndex(alerta => alerta.idCondominio === req.body.id);
-
     // Atualizar o array de alerta_critico
-    if (ultimo_alerta_Critico >= 0) {
-        const variacao = alerta_Critico[ultimo_alerta_Critico].nivel - req.body.nivel;
-        console.log(alerta_Critico[ultimo_alerta_Critico]);
-        console.log(req.body.nivel);
-        if (alerta_Critico[ultimo_alerta_Critico].nivel < req.body.nivel && variacao > 0.3) {
-            console.log("Atualizar o array de alertas criticos");
-            alerta_Critico[ultimo_alerta_Critico] = dados_sensor;
-        } else {
-            console.log("Remover o sensor o array de alertas criticos");
-            alerta_Critico.splice(ultimo_alerta_Critico, 1);
+    if (req.body.nivel >= nivel_critico && req.body.nivel < vazio) {
+        console.log("Valor dentro do parametro critico");
+        const ultimo_alerta_Critico = alerta_Critico.findIndex(alerta => alerta.idCondominio === req.body.id);
+        const ultimo_alerta_Vazio = alerta_Vazio.findIndex(alerta => alerta.idCondominio === req.body.id);
+            
+        // Já foi lançado um alerta
+        if (ultimo_alerta_Critico >= 0) {
+            console.log("Atualizar array");
+            // Verifica se subiu (com um valor maior do que 0.2)
+            const variacao = alerta_Critico[ultimo_alerta_Critico].nivel - req.body.nivel;
+            console.log("Variação: " + variacao);
+
+            // Se o valor tiver subido em relação ao ultimo valor lido remove-se esse elemento do array
+            if (alerta_Critico[ultimo_alerta_Critico].nivel < req.body.nivel && variacao > 0.2) {
+                console.log("Remover do array de alertas criticos");
+                alerta_Critico.splice(ultimo_alerta_Critico, 1);
+            } 
+            // Caso contrario atualiza-se o valor que está presente no array
+            else {
+                console.log("Atualizar o array de alertas criticos");
+                alerta_Critico[ultimo_alerta_Critico] = dados_sensor;
+            }
+        }
+        // Lança um alerta
+        else{
+            console.log("Novo alerta na base de dados");
+            alerta_Critico.push(dados_sensor);
+            await criarAlerta(req.body.data, req.body.id, "A caixa de água encontra-se vazia! Deve repor a água à caixa de água.");
         }
     }
-    else if (req.body.nivel >= nivel_critico && req.body.nivel < vazio) {
-        console.log("Criar alerta _ critico");
-        alerta_Critico.push(dados_sensor);
-        await criarAlerta(req.body.data, req.body.id, "Nível de água na caixa de água em estado crítico. Deve repor a água o quanto antes.");
+    else if (req.body.nivel > vazio) {
+        console.log("Valor dentro do parametro vazio");
+        const ultimo_alerta_Vazio = alerta_Vazio.findIndex(alerta => alerta.idCondominio === req.body.id);
+            
+        // Já foi lançado um alerta
+        if (ultimo_alerta_Vazio >= 0) {
+            console.log("Atualizar array de vazios");
+            // Verifica se subiu (com um valor maior do que 0.2)
+            const variacao = alerta_Vazio[ultimo_alerta_Vazio].nivel - req.body.nivel;
+            console.log("Variação: " + variacao);
+
+            // Se o valor tiver subido em relação ao ultimo valor lido remove-se esse elemento do array
+            if (alerta_Vazio[ultimo_alerta_Vazio].nivel < req.body.nivel && variacao > 0.2) {
+                console.log("Remover do array de alertas vazio");
+                alerta_Vazio.splice(ultimo_alerta_Vazio, 1);
+            } 
+            // Caso contrario atualiza-se o valor que está presente no array
+            else {
+                console.log("Atualizar o array de alertas criticos");
+                alerta_Vazio[ultimo_alerta_Vazio] = dados_sensor;
+            }
+        }
+        // Lança um alerta
+        else{
+            console.log("Novo alerta na base de dados");
+            alerta_Vazio.push(dados_sensor);
+            await criarAlerta(req.body.data, req.body.id, "A caixa de água encontra-se vazia! Deve repor a água à caixa de água.");
+        }
+    
     }
 
-    // Atualizar o array de alerta_vazio
-    if (ultimo_alerta_Vazio >= 0) {
-        console.log("Atualizar o array de alertas criticos");
-        const variacao = alerta_Vazio[ultimo_alerta_Vazio].nivel - req.body.nivel;
-        if (Math.abs(variacao) > 0.6 && variacao > 0)
-            alerta_Vazio[ultimo_alerta_Vazio] = dados_sensor;
-        else
-            alerta_Vazio.splice(ultimo_alerta_Vazio, 1);
-    } else if (req.body.nivel >= vazio) {
-        console.log("Criar alerta _ vazio");
-        alerta_Vazio.push(dados_sensor);
-        await criarAlerta(req.body.data, req.body.id, "A caixa de água encontra-se vazia! Deve repor a água à caixa de água.");
-    }
 }
 
 // Função auxiliar para criar um novo alerta
