@@ -70,81 +70,12 @@ app.post('/sensor_nivel', (req, res) => {
         idCondominio: req.body.id,
         nivel: req.body.nivel,
     })
-        .then(() => {
+        .then(async () => {
             // Dados salvos com sucesso
             console.log("Dados de nivel guardados com sucesso");
+            await verificarAlertas(req);
+            return res.sendStatus(200);
 
-            dados_sensor = {
-                idCondominio: req.body.id,
-                nivel: req.body.nivel,
-            }
-
-            const ultimo_alerta_Critico = alerta_Critico.indexOf(dados_sensor);
-            const ultimo_alerta_Vazio = alerta_Vazio.indexOf(dados_sensor);
-
-            // Atualizar o array de alerta_critico
-            if (ultimo_alerta_Critico >= 0) {
-                if (alerta_Critico[ultimo_alerta_Critico].nivel > req.body.nivel)
-                    alerta_Critico[ultimo_alerta_Critico] = dados_sensor;
-                else
-                    alerta_Critico.splice(ultimo_alerta_Critico, 1);
-
-                return res.sendStatus(200);
-            }
-            else if (req.body.nivel >= nivel_critico && req.body.nivel < vazio) {
-                alerta_Critico.push(dados_sensor);
-                // Criar novo alerta
-                firestore.collection('alertas').doc().set({
-                    data: req.body.data,
-                    enable: true,
-                    idCondominio: req.body.id,
-                    mensagem: "Nível de água na caixa de água em estado crítico",
-                    tipo: "Nível de água",
-                    visto: false
-
-                })
-                    .then(() => {
-                        // Dados salvos com sucesso
-                        console.log("Dados de nivel guardados com sucesso")
-                        return res.sendStatus(200);
-                    })
-                    .catch((error) => {
-                        // Erro ao salvar os dados
-                        console.error('Erro ao salvar os dados:', error);
-                        return res.sendStatus(500);
-                    });
-            }
-
-            // Atualizar o array de alerta_vazio
-            if (ultimo_alerta_Vazio >= 0) {
-                if (alerta_Vazio[ultimo_alerta_Vazio].nivel > req.body.nivel)
-                    alerta_Vazio[ultimo_alerta_Vazio] = dados_sensor;
-                else
-                    alerta_Vazio.splice(ultimo_alerta_Vazio, 1);
-                return res.sendStatus(200);
-            } else if (req.body.nivel >= vazio) {
-                alerta_Vazio.push(dados_sensor);
-                // Criar novo alerta
-                firestore.collection('alertas').doc().set({
-                    data: req.body.data,
-                    enable: true,
-                    idCondominio: req.body.id,
-                    mensagem: "A caixa de água encontra-se vazia! Deve repor",
-                    tipo: "Nível de água",
-                    visto: false
-
-                })
-                    .then(() => {
-                        // Dados salvos com sucesso
-                        console.log("Dados de nivel guardados com sucesso")
-                        return res.sendStatus(200);
-                    })
-                    .catch((error) => {
-                        // Erro ao salvar os dados
-                        console.error('Erro ao salvar os dados:', error);
-                        return res.sendStatus(200);
-                    });
-            }
         })
         .catch((error) => {
             // Erro ao salvar os dados
@@ -152,6 +83,64 @@ app.post('/sensor_nivel', (req, res) => {
             return res.sendStatus(500);
         });
 });
+
+// funcao auxiliar que irá criar os alertas de nivel crítico ou vazio (quando aplicável)
+async function verificarAlertas(req) {
+    let dados_sensor = {
+        idCondominio: req.body.id,
+        nivel: req.body.nivel,
+    }
+
+    const ultimo_alerta_Critico = alerta_Critico.findIndex(alerta => alerta.idCondominio === req.body.id);
+    const ultimo_alerta_Vazio = alerta_Vazio.findIndex(alerta => alerta.idCondominio === req.body.id);
+
+    // Atualizar o array de alerta_critico
+    if (ultimo_alerta_Critico >= 0) {
+        console.log("Atualizar o array de alertas criticos");
+        const variacao = alerta_Critico[ultimo_alerta_Critico].nivel - req.body.nivel;
+        if (Math.abs(variacao) > 0.6 && variacao > 0)
+            alerta_Critico[ultimo_alerta_Critico] = dados_sensor;
+        else
+            alerta_Critico.splice(ultimo_alerta_Critico, 1);
+    }
+    else if (req.body.nivel >= nivel_critico && req.body.nivel < vazio) {
+        console.log("Criar alerta _ critico");
+        alerta_Critico.push(dados_sensor);
+        await criarAlerta(req.body.data, req.body.id, "Nível de água na caixa de água em estado crítico. Deve repor a água o quanto antes.");
+    }
+
+    // Atualizar o array de alerta_vazio
+    if (ultimo_alerta_Vazio >= 0) {
+        console.log("Atualizar o array de alertas criticos");
+        const variacao = alerta_Vazio[ultimo_alerta_Vazio].nivel - req.body.nivel;
+        if (Math.abs(variacao) > 0.6 && variacao > 0)
+            alerta_Vazio[ultimo_alerta_Vazio] = dados_sensor;
+        else
+            alerta_Vazio.splice(ultimo_alerta_Vazio, 1);
+    } else if (req.body.nivel >= vazio) {
+        console.log("Criar alerta _ vazio");
+        alerta_Vazio.push(dados_sensor);
+        await criarAlerta(req.body.data, req.body.id, "A caixa de água encontra-se vazia! Deve repor a água à caixa de água.");
+    }
+}
+
+// Função auxiliar para criar um novo alerta
+function criarAlerta(data, idCondominio, mensagem) {
+    return firestore.collection('alertas').doc().set({
+        data: data,
+        enable: true,
+        idCondominio: idCondominio,
+        mensagem: mensagem,
+        tipo: "Nível de água",
+        visto: false
+    })
+        .then(() => {
+            console.log("Alerta criado com sucesso");
+        })
+        .catch((error) => {
+            console.error('Erro ao criar alerta:', error);
+        });
+}
 
 // Iniciar o servidor
 app.listen(port, () => {
