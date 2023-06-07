@@ -1,13 +1,11 @@
 # pip install RPi.GPIO requests 
 import RPi.GPIO as GPIO
 import time
-import json
 import requests
 
 # Variaveis
 pino_sensor_fluxo = 2
 flow_count = 0
-
 
 # Configurar o pino GPIO
 GPIO.setmode(GPIO.BCM)
@@ -38,13 +36,13 @@ def main():
 
             flow_rate = calculate_flow(end_count - start_count, end_time - start_time)
                        # Criar uma instância do objeto com os valores
-                       
-            casa = "jFEjGUB8wEufOnt4ss1O"           
+           
+            casa = "jFEjGUB8wEufOnt4ss1O"
             dados = {
-                "id": casa,
-                "data": end_time,
+                "id": casa, 
+                "data": end_time, 
                 "quantidade": flow_rate
-                }
+            }
             
             print(dados)
 
